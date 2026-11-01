@@ -158,10 +158,10 @@ def plate_geometry(armor):
     horizontal_normal = normalize((normal[0], normal[1], 0.0))
     theta = math.atan2(horizontal_normal[1], horizontal_normal[0])
     return {
-        "center": center,
-        "normal": normal,
-        "horizontal_normal": horizontal_normal,
-        "theta": theta,
+        'center': center,
+        'normal': normal,
+        'horizontal_normal': horizontal_normal,
+        'theta': theta,
     }
 
 
@@ -171,8 +171,8 @@ def estimate_target_geometry(plates):
         for second_index in range(first_index + 1, len(plates)):
             first = plates[first_index]
             second = plates[second_index]
-            first_normal = first["horizontal_normal"]
-            second_normal = second["horizontal_normal"]
+            first_normal = first['horizontal_normal']
+            second_normal = second['horizontal_normal']
             normal_pair = (
                 second_normal[0] - first_normal[0],
                 second_normal[1] - first_normal[1],
@@ -186,8 +186,8 @@ def estimate_target_geometry(plates):
                 + first_normal[1] * second_normal[1]
             )
             center_delta = (
-                second["center"][0] - first["center"][0],
-                second["center"][1] - first["center"][1],
+                second['center'][0] - first['center'][0],
+                second['center'][1] - first['center'][1],
             )
             radius = (
                 center_delta[0] * normal_pair[0]
@@ -197,16 +197,16 @@ def estimate_target_geometry(plates):
                 continue
 
             center = (
-                first["center"][0] - radius * first_normal[0],
-                first["center"][1] - radius * first_normal[1],
+                first['center'][0] - radius * first_normal[0],
+                first['center'][1] - radius * first_normal[1],
             )
             predicted_second = (
                 center[0] + radius * second_normal[0],
                 center[1] + radius * second_normal[1],
             )
             residual = math.hypot(
-                predicted_second[0] - second["center"][0],
-                predicted_second[1] - second["center"][1],
+                predicted_second[0] - second['center'][0],
+                predicted_second[1] - second['center'][1],
             )
             score = alignment + residual
             if best is None or score < best[0]:
@@ -270,26 +270,26 @@ def solve_aim_angles(center, telemetry):
 
 class AimNode(Node):
     def __init__(self):
-        super().__init__("aim_node")
+        super().__init__('aim_node')
 
         self.enable_fire = bool(
-            self.declare_parameter("enable_fire", True).value
+            self.declare_parameter('enable_fire', True).value
         )
         self.track_samples = max(
             6,
             min(
                 12,
-                int(self.declare_parameter("track_samples", 7).value),
+                int(self.declare_parameter('track_samples', 7).value),
             ),
         )
         self.fire_delay_scale = float(
-            self.declare_parameter("fire_delay_scale", 1.0).value
+            self.declare_parameter('fire_delay_scale', 1.0).value
         )
         self.aim_tolerance = math.radians(
             max(
                 0.05,
                 float(
-                    self.declare_parameter("aim_tolerance_deg", 0.35).value
+                    self.declare_parameter('aim_tolerance_deg', 0.35).value
                 ),
             )
         )
@@ -306,7 +306,7 @@ class AimNode(Node):
         self.latest_telemetry = None
         self.plates = []
 
-        self.session_id = ""
+        self.session_id = ''
         self.target_center = None
         self.target_radius = None
         self.geometry_has_pair = False
@@ -320,32 +320,32 @@ class AimNode(Node):
 
         self.armors_subscription = self.create_subscription(
             ArmorCornersArray,
-            "/aim_sim/armors",
+            '/aim_sim/armors',
             self.on_armors,
             qos,
         )
         self.gimbal_subscription = self.create_subscription(
             GimbalState,
-            "/aim_sim/gimbal",
+            '/aim_sim/gimbal',
             self.on_gimbal,
             qos,
         )
         self.telemetry_subscription = self.create_subscription(
             Telemetry,
-            "/aim_sim/telemetry",
+            '/aim_sim/telemetry',
             self.on_telemetry,
             qos,
         )
         self.command_publisher = self.create_publisher(
             AimCommand,
-            "/aim_sim/command",
+            '/aim_sim/command',
             qos,
         )
         self.timer = self.create_timer(0.02, self.on_timer)
 
         self.firing = False
         self.last_status_time = 0.0
-        self.get_logger().info("Rotation-prediction aim node started")
+        self.get_logger().info('Rotation-prediction aim node started')
 
     def reset_track(self):
         self.plates = []
@@ -400,7 +400,7 @@ class AimNode(Node):
             self.center_velocity = velocity_x, velocity_y
             self.center_acceleration = acceleration_x, acceleration_y
         elif not self.geometry_has_pair:
-            plate_center = self.plates[0]["center"]
+            plate_center = self.plates[0]['center']
             self.target_center = plate_center[0], plate_center[1]
             self.target_radius = 0.0
             self.center_samples.append(
@@ -417,8 +417,8 @@ class AimNode(Node):
             self.center_velocity = velocity_x, velocity_y
             self.center_acceleration = acceleration_x, acceleration_y
 
-        sine = sum(math.sin(4.0 * plate["theta"]) for plate in self.plates)
-        cosine = sum(math.cos(4.0 * plate["theta"]) for plate in self.plates)
+        sine = sum(math.sin(4.0 * plate['theta']) for plate in self.plates)
+        cosine = sum(math.cos(4.0 * plate['theta']) for plate in self.plates)
         raw_phase = math.atan2(sine, cosine) * 0.25
         if self.rotation_phase is None:
             self.rotation_phase = raw_phase
@@ -472,7 +472,7 @@ class AimNode(Node):
                     + self.fire_delay_scale * telemetry.delay
                     + flight_time
                 )
-                predicted_theta = plate["theta"] + self.angular_velocity * horizon
+                predicted_theta = plate['theta'] + self.angular_velocity * horizon
                 predicted_center = (
                     self.target_center[0]
                     + self.center_velocity[0] * horizon
@@ -482,17 +482,17 @@ class AimNode(Node):
                     + self.center_velocity[1] * horizon
                     + 0.5 * self.center_acceleration[1] * horizon * horizon
                     + self.target_radius * math.sin(predicted_theta),
-                    plate["center"][2],
+                    plate['center'][2],
                 )
 
                 normal_horizontal_size = math.hypot(
-                    plate["normal"][0],
-                    plate["normal"][1],
+                    plate['normal'][0],
+                    plate['normal'][1],
                 )
                 predicted_normal = (
                     normal_horizontal_size * math.cos(predicted_theta),
                     normal_horizontal_size * math.sin(predicted_theta),
-                    plate["normal"][2],
+                    plate['normal'][2],
                 )
                 to_origin = normalize(scale(predicted_center, -1.0))
                 facing = dot(predicted_normal, to_origin)
@@ -567,29 +567,31 @@ class AimNode(Node):
 
         if command.fire != self.firing:
             self.firing = command.fire
-            self.get_logger().info(f"Fire gate: {'OPEN' if self.firing else 'CLOSED'}")
+            gate = 'OPEN' if self.firing else 'CLOSED'
+            self.get_logger().info(f'Fire gate: {gate}')
 
         now = time.monotonic()
         if now - self.last_status_time >= 0.5:
             self.last_status_time = now
             actual_angles = (
-                f"({gimbal.yaw:.3f}, {gimbal.pitch:.3f})"
+                f'({gimbal.yaw:.3f}, {gimbal.pitch:.3f})'
                 if gimbal is not None
-                else "(unavailable)"
+                else '(unavailable)'
             )
             center_text = (
-                f"({self.target_center[0]:.3f}, {self.target_center[1]:.3f})"
+                f'({self.target_center[0]:.3f}, {self.target_center[1]:.3f})'
                 if self.target_center is not None
-                else "(unavailable)"
+                else '(unavailable)'
             )
             self.get_logger().info(
-                f"armors={len(armors_msg.armors)} center={center_text} "
-                f"radius={self.target_radius if self.target_radius is not None else -1.0:.3f} "
-                f"center_velocity=({self.center_velocity[0]:.3f}, {self.center_velocity[1]:.3f}) "
-                f"center_acceleration=({self.center_acceleration[0]:.3f}, {self.center_acceleration[1]:.3f}) "
-                f"omega={self.angular_velocity:.3f} "
-                f"command=({command.yaw:.3f}, {command.pitch:.3f}) "
-                f"actual={actual_angles} fire={command.fire}"
+                f'armors={len(armors_msg.armors)} center={center_text} '
+                f'radius={self.target_radius if self.target_radius is not None else -1.0:.3f} '
+                f'center_velocity=({self.center_velocity[0]:.3f}, {self.center_velocity[1]:.3f}) '
+                f'center_acceleration=({self.center_acceleration[0]:.3f}, '
+                f'{self.center_acceleration[1]:.3f}) '
+                f'omega={self.angular_velocity:.3f} '
+                f'command=({command.yaw:.3f}, {command.pitch:.3f}) '
+                f'actual={actual_angles} fire={command.fire}'
             )
 
         self.command_publisher.publish(command)
@@ -609,5 +611,5 @@ def main(args=None):
             rclpy.shutdown()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

@@ -22,17 +22,17 @@ def stamp_seconds(stamp):
 
 class ScoreMonitor(Node):
     def __init__(self):
-        super().__init__("score_monitor")
+        super().__init__('score_monitor')
         self.scenario = str(
-            self.declare_parameter("scenario", "unknown").value
+            self.declare_parameter('scenario', 'unknown').value
         )
         output_name = str(
-            self.declare_parameter("output_csv", "").value
+            self.declare_parameter('output_csv', '').value
         )
         self.output_path = (
             Path(output_name).expanduser()
             if output_name
-            else Path.home() / "aim_kill_times.csv"
+            else Path.home() / 'aim_kill_times.csv'
         )
 
         qos = QoSProfile(
@@ -43,26 +43,26 @@ class ScoreMonitor(Node):
         )
         self.clock_subscription = self.create_subscription(
             Clock,
-            "/clock",
+            '/clock',
             self.on_clock,
             qos,
         )
         self.armors_subscription = self.create_subscription(
             ArmorCornersArray,
-            "/aim_sim/armors",
+            '/aim_sim/armors',
             self.on_armors,
             qos,
         )
 
         self.sim_time = 0.0
-        self.session_id = ""
+        self.session_id = ''
         self.session_start = None
         self.had_target = False
         self.first_empty_stamp = None
         self.reported = False
         self.get_logger().info(
-            f"Score monitor started for scenario={self.scenario}; "
-            f"results={self.output_path}"
+            f'Score monitor started for scenario={self.scenario}; '
+            f'results={self.output_path}'
         )
 
     def on_clock(self, msg):
@@ -79,7 +79,7 @@ class ScoreMonitor(Node):
             self.first_empty_stamp = None
             self.reported = False
             self.get_logger().info(
-                f"New session={self.session_id}, start={self.session_start:.3f} s"
+                f'New session={self.session_id}, start={self.session_start:.3f} s'
             )
 
         if msg.armors:
@@ -101,26 +101,26 @@ class ScoreMonitor(Node):
         kill_time = max(0.0, self.first_empty_stamp - self.session_start)
         self.reported = True
         self.get_logger().info(
-            f"TARGET_LOST scenario={self.scenario} "
-            f"estimated_kill_time={kill_time:.3f} s"
+            f'TARGET_LOST scenario={self.scenario} '
+            f'estimated_kill_time={kill_time:.3f} s'
         )
         self.write_result(kill_time)
 
     def write_result(self, kill_time):
         new_file = not self.output_path.exists()
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
-        with self.output_path.open("a", newline="", encoding="utf-8") as output:
+        with self.output_path.open('a', newline='', encoding='utf-8') as output:
             writer = csv.writer(output)
             if new_file:
                 writer.writerow(
-                    ["recorded_at", "scenario", "session_id", "estimated_kill_time_s"]
+                    ['recorded_at', 'scenario', 'session_id', 'estimated_kill_time_s']
                 )
             writer.writerow(
                 [
-                    datetime.now().isoformat(timespec="seconds"),
+                    datetime.now().isoformat(timespec='seconds'),
                     self.scenario,
                     self.session_id,
-                    f"{kill_time:.3f}",
+                    f'{kill_time:.3f}',
                 ]
             )
 
@@ -138,5 +138,5 @@ def main(args=None):
             rclpy.shutdown()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
