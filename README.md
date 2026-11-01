@@ -155,9 +155,15 @@ student_ws/
 │       ├── setup.py
 │       └── student_auto_aim/
 │           └── aim_node.py
+├── evidence/
+│   ├── aim_results.csv
+│   └── screenshots/
 └── tools/
     └── score_monitor.py
 ```
 
 `score_monitor.py` 仅用于辅助记录近似击毁时间。它订阅 `/clock` 和
 `/aim_sim/armors`，不读取仿真内部真值，也不参与瞄准控制。
+
+`evidence/aim_results.csv` 汇总三轮成绩，`evidence/screenshots/` 保存各任务
+击毁后的仿真统计截图。
